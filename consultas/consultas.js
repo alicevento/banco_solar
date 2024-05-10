@@ -19,7 +19,7 @@ async function agregar (nombre, balance) {
         return result.rows[0];
     } catch (error) {
         // console.error("Error al agregar el usuario:", error.message);
-        throw error; // relanza el error para que pueda ser manejado en el archivo index.js
+        throw error; 
     }
 }
 
@@ -63,5 +63,43 @@ async function eliminar (id) {
         throw error;
     }
 }
+//Función para hacer una nueva transferencia
+async function nuevaTransferencia(emisorId, receptorId, monto) {
+    try {
+        // Iniciar una transacción SQL
+        await pool.query('BEGIN');
 
-module.exports = {agregar, todos, editar, eliminar};
+        // Actualizar el balance del emisor
+        await pool.query('UPDATE usuarios SET balance = balance - $1 WHERE id = $2', [monto, emisorId]);
+
+        // Actualizar el balance del receptor
+        await pool.query('UPDATE usuarios SET balance = balance + $1 WHERE id = $2', [monto, receptorId]);
+
+        // Registrar la transferencia en la tabla transferencias
+        const fecha = new Date();
+        await pool.query('INSERT INTO transferencias (emisor, receptor, monto, fecha) VALUES ($1, $2, $3, $4)', [emisorId, receptorId, monto, fecha]);
+
+        // Confirmar la transacción SQL
+        await pool.query('COMMIT');
+
+        return { mensaje: 'Transferencia realizada con éxito' };
+    } catch (error) {
+        // Si ocurre algún error, hacer un rollback de la transacción SQL
+        await pool.query('ROLLBACK');
+        throw error;
+    }
+}
+
+//Funcion  /transferencias GET que devuelve todas las transferencias almacenadas en la base de datos en formato de arreglo
+async function transferencias () {
+    const consulta = `
+    SELECT t.fecha, t.monto, e.nombre AS emisor, r.nombre AS receptor 
+    FROM transferencias t 
+    INNER JOIN usuarios e ON t.emisor = e.id
+    INNER JOIN usuarios r ON t.receptor = r.id;
+    `;
+    const result = await pool.query(consulta);
+    return result.rows;
+}
+
+module.exports = {agregar, todos, editar, eliminar, nuevaTransferencia, transferencias};
