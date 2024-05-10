@@ -41,5 +41,7 @@ function handleErrors(errorCode) {
     return { errorCode, status, message };
 }
 
-module.exports = handleErrors;
+module.exports = {
+    handleErrors: handleErrors
+};
 

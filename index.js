@@ -6,7 +6,7 @@ const port = 3000;
 app.listen(port, () => console.log("Servidor escuchado en puerto 3000"));
 
 //Importando funcion desde el modulo consultas.js
-const { agregar, todos, eliminar, editar} = require('./consultas/consultas.js');
+const { agregar, todos, editar, eliminar} = require('./consultas/consultas.js');
 //Importando funcion de manejo de errores handleerrors.js
 const { handleErrors } = require('./consultas/handleErrors.js');
 //middleware para recibir desde el front como json
@@ -16,3 +16,87 @@ app.use(express.json());
 app.get("/", (req, res) => {
     res.sendFile(__dirname + "/index.html");
 });
+
+//Ruta /usuario POST que recibe los datos con la funcion agregar de un nuevo usuario y los almacena en la base de datos bancosolar
+app.post("/usuario", async (req, res) => {
+    const {nombre, balance} = req.body;
+    //verificar si se pasó el nombre y balance en la solicitud
+    if (!nombre ||!balance) {
+        res.status(400).json({ mensaje: "Se deben agregar todos los datos" });
+    } else {
+        try {
+            const usuario = await agregar(nombre, balance);
+            res.status(201).json(usuario);
+        } catch (error) {
+            // Verificar si el error tiene un código asociado y manejarlo
+            if (error.code) {
+                const { errorCode, status, message } = handleErrors(error.code); // Obtener el mensaje de error personalizado
+                console.error("Error al agregar el usuario.", "Código de error: " , errorCode, "-", message); // Mostrar código de error y mensaje de error
+                res.status(status).json({ error: message });
+            } else {
+                // Si el error no tiene un código, mostrar un mensaje genérico
+                console.error("Error al agregar el usuario:", error.message);
+                res.status(500).json({ error: "Error genérico del servidor" });
+            }
+        }
+    }
+});
+
+//Ruta /usuarios GET que devuelve todos los usuarios registrados con sus balances
+app.get("/usuarios", async (req, res) => {
+    try {
+        const usuarios = await todos();
+        res.status(200).json(usuarios);
+    } catch (error) {
+        console.error("Error al consultar los usuarios:", error);
+        res.status(500).json({ error: "Error genérico del servidor" });
+    }
+});
+
+//Ruta /usuario PUT que recibe los datos modificados de un usuario registrado y los actualiza
+app.put("/usuario", async (req, res) => {
+    const {id, nombre, balance} = req.body;
+    if (!id ||!nombre ||!balance) {
+        res.status(400).json({ mensaje: "Se deben agregar todos los datos" });
+    } else {
+        try {
+            const usuario = await editar(id, nombre, balance);
+            res.status(200).json(usuario);
+        } catch (error) {
+            console.error("Error al editar el usuario:", error);
+            res.status(500).json({ error: "Error genérico del servidor" });
+        }
+    }
+});
+
+//Ruta /usuario DELETE que recibe el id de un usuario registrado y lo elimina
+app.delete("/usuario", async (req, res) => {
+    const {id} = req.query;
+    if (!id) {
+        res.status(400).json({ mensaje: "Se deben agregar todos los datos" });
+    } else {
+        try {
+            const usuario = await eliminar(id);
+            res.status(200).json(usuario);
+        } catch (error) {
+            console.error("Error al eliminar el usuario:", error);
+            res.status(500).json({ error: "Error genérico del servidor" });
+        }
+    }
+});
+
+
+
+
+
+
+
+// / GET: Devuelve la aplicación cliente disponible en el apoyo de la prueba.
+// ● /usuario POST: Recibe los datos de un nuevo usuario y los almacena en PostgreSQL.
+// ● /usuarios GET: Devuelve todos los usuarios registrados con sus balances.
+// ● /usuario PUT: Recibe los datos modificados de un usuario registrado y los actualiza.
+// ● /usuario DELETE: Recibe el id de un usuario registrado y lo elimina .
+// ● /transferencia POST: Recibe los datos para realizar una nueva transferencia. Se
+// debe ocupar una transacción SQL en la consulta a la base de datos.
+// ● /transferencias GET: Devuelve todas las transferencias almacenadas en la base de
+// datos en formato de arreglo.

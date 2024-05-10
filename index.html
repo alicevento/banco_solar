@@ -194,13 +194,19 @@
   };
 
   const editUsuario = async (id) => {
-    const name = $("#nombreEdit").val();
+    const nombre = $("#nombreEdit").val();
     const balance = $("#balanceEdit").val();
+     // Verificar si el campo de balance contiene solo números
+     if (isNaN(balance)) {
+      alert("El campo de balance debe contener solo números.");
+      return;
+    }
     try {
       const { data } = await axios.put(
         `http://localhost:3000/usuario?id=${id}`,
         {
-          name,
+          id,
+          nombre,
           balance,
         }
       );
@@ -212,27 +218,40 @@
   };
 
   $("form:first").submit(async (e) => {
-    e.preventDefault();
-    let nombre = $("form:first input:first").val();
-    let balance = Number($("form:first input:nth-child(2)").val());
-    try {
-      const response = await fetch("http://localhost:3000/usuario", {
-        method: "post",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          nombre,
-          balance,
-        }),
-      });
-      $("form:first input:first").val("");
-      $("form:first input:nth-child(2)").val("");
-      location.reload();
-    } catch (e) {
-      alert("Algo salió mal ..." + e);
+  e.preventDefault();
+  let nombre = $("form:first input:first").val();
+  let balance = Number($("form:first input:nth-child(2)").val());
+   // Verificar si se han completado ambos campos y si el campo de balance contiene solo números
+   if (!nombre || !balance) {
+    alert("Por favor, complete todos los campos. Recuerde que el campo balance debe ser sólo números");
+    return;
+  } else if (isNaN(balance)) {
+    alert("El campo de balance debe contener solo números.");
+    return;
+  }
+  try {
+    const response = await fetch("http://localhost:3000/usuario", {
+      method: "post",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        nombre,
+        balance,
+      }),
+    });
+    if (!response.ok) {
+      const errorMessage = await response.text();
+      throw new Error(errorMessage);
     }
-  });
+    $("form:first input:first").val("");
+    $("form:first input:nth-child(2)").val("");
+    alert("Usuario agregado exitosamente.");
+    location.reload();
+  } catch (error) {
+    alert("Algo salió mal: " + error.message);
+  }
+});
 
   $("form:last").submit(async (e) => {
     e.preventDefault();
@@ -278,7 +297,7 @@
                     onclick="setInfoModal('${c.nombre}', '${c.balance}', '${c.id}')"
                   >
                     Editar</button
-                  ><button class="btn btn-danger" onclick="eliminarUsuario('${c.id}')">Eliminar</button>
+                  ><button class="btn btn-danger" onclick="eliminarUsuario('${c.id}', '${c.nombre}')">Eliminar</button>
                 </td>
               </tr>
          `);
@@ -288,12 +307,20 @@
     });
   };
 
-  const eliminarUsuario = async (id) => {
+const eliminarUsuario = async (id, nombre) => {
+  try {
     const response = await fetch(`http://localhost:3000/usuario?id=${id}`, {
       method: "DELETE",
     });
-    getUsuarios();
-  };
+    const data = await response.json();
+    console.log(data); // Para verificar la respuesta del servidor
+    getUsuarios(); // Para actualizar la tabla de usuarios después de eliminar
+    alert(`Se eliminó correctamente al usuario: ${nombre}.`);
+  } catch (error) {
+    console.error("Error al eliminar el usuario: ", error);
+    alert("Algo salió mal..." + error);
+  }
+};
 
   const getTransferencias = async () => {
     const { data } = await axios.get("http://localhost:3000/transferencias");
