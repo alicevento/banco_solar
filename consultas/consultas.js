@@ -1,4 +1,5 @@
 const { Pool } = require('pg');
+const handleErrors = require('./handleErrors');
 
 const pool = new Pool({
     user: 'alice',
@@ -64,29 +65,29 @@ async function eliminar (id) {
     }
 }
 //Función para hacer una nueva transferencia
-async function nuevaTransferencia(emisorId, receptorId, monto) {
+async function nuevaTransferencia(emisor, receptor, monto) {
     try {
         // Iniciar una transacción SQL
         await pool.query('BEGIN');
 
         // Actualizar el balance del emisor
-        await pool.query('UPDATE usuarios SET balance = balance - $1 WHERE id = $2', [monto, emisorId]);
+        await pool.query('UPDATE usuarios SET balance = balance - $1 WHERE id = $2', [monto, emisor]);
 
         // Actualizar el balance del receptor
-        await pool.query('UPDATE usuarios SET balance = balance + $1 WHERE id = $2', [monto, receptorId]);
+        await pool.query('UPDATE usuarios SET balance = balance + $1 WHERE id = $2', [monto, receptor]);
 
         // Registrar la transferencia en la tabla transferencias
         const fecha = new Date();
-        await pool.query('INSERT INTO transferencias (emisor, receptor, monto, fecha) VALUES ($1, $2, $3, $4)', [emisorId, receptorId, monto, fecha]);
+        await pool.query('INSERT INTO transferencias (emisor, receptor, monto, fecha) VALUES ($1, $2, $3, $4)', [emisor, receptor, monto, fecha]);
 
         // Confirmar la transacción SQL
         await pool.query('COMMIT');
 
         return { mensaje: 'Transferencia realizada con éxito' };
     } catch (error) {
-        // Si ocurre algún error, hacer un rollback de la transacción SQL
+        // rollback de la transacción SQL
         await pool.query('ROLLBACK');
-        throw error;
+        return handleErrors;
     }
 }
 

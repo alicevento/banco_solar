@@ -260,6 +260,24 @@
     let emisor = $("form:last select:first").val();
     let receptor = $("form:last select:last").val();
     let monto = $("#monto").val();
+    //Obtener el balance del emisor seleccionado
+    let emisorBalance = $("#emisor option:selected").data("balance");
+    //Validar que el receptor no sea el mismo que el emisor
+    if (emisor === receptor) {
+      alert("El receptor no puede ser el mismo que el emisor");
+      return false;
+    }
+    // Verificar si el campo de balance contiene solo números
+    if (isNaN(monto)) {
+      alert("El campo de monto debe contener solo números.");
+      return false;
+    }
+    // Verificar que el monto sea menor al balance del emisor
+    if (monto > emisorBalance) {
+      alert("El monto a transferir no puede ser mayor al balance del emisor");
+      return false;
+    }
+    // Verificar si se han completado ambos campos y si el campo de balance contiene solo números
     if (!monto || !emisor || !receptor) {
       alert("Debe seleccionar un emisor, receptor y monto a transferir");
       return false;
@@ -307,7 +325,7 @@
               </tr>
          `);
 
-      $("#emisor").append(`<option value="${c.id}">${c.nombre}</option>`);
+      $("#emisor").append(`<option value="${c.id}" data-balance="${c.balance}">${c.nombre}</option>`);
       $("#receptor").append(`<option value="${c.id}">${c.nombre}</option>`);
     });
   };

@@ -110,10 +110,10 @@ app.post("/transferencia", async (req, res) => {
 //Ruta /transferencias GET que devuelve todas las transferencias registradas
 app.get("/transferencias", async (req, res) => {
     try {
-      const resultadosTransferencias = await transferencias(); 
-      res.status(200).json(resultadosTransferencias); 
+      const resTransferencias = await transferencias(); 
+      res.status(200).json(resTransferencias); 
     } catch (error) {
-      console.error("Error al consultar las transferencias:", error);
+      console.error("Error al consultar las transferencias:", error.message);
       res.status(500).json({ error: "Error genérico del servidor" });
     }
   });
