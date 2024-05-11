@@ -67,6 +67,11 @@ async function eliminar (id) {
 //Función para hacer una nueva transferencia
 async function nuevaTransferencia(emisor, receptor, monto) {
     try {
+         // Verificar si el emisor tiene suficiente saldo para realizar la transferencia
+         const saldoEmisor = await obtenerSaldo(emisor);
+         if (saldoEmisor < monto) {
+             return res.status(400).json({ mensaje: "El emisor no tiene suficiente saldo para realizar la transferencia" });
+         }
         // Iniciar una transacción SQL
         await pool.query('BEGIN');
 
@@ -87,7 +92,7 @@ async function nuevaTransferencia(emisor, receptor, monto) {
     } catch (error) {
         // rollback de la transacción SQL
         await pool.query('ROLLBACK');
-        return handleErrors;
+       throw error;
     }
 }
 
@@ -103,4 +108,11 @@ async function transferencias () {
     return result.rows;
 }
 
-module.exports = {agregar, todos, editar, eliminar, nuevaTransferencia, transferencias};
+//Funcion para obtener el saldo de un usuario
+async function obtenerSaldo (id) {
+    const { rows } = await pool.query(
+        'SELECT balance FROM usuarios WHERE id = $1', [id]);
+    return rows[0].balance;
+}
+
+module.exports = {agregar, todos, editar, eliminar, nuevaTransferencia, transferencias, obtenerSaldo};

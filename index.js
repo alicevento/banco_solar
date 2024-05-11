@@ -6,7 +6,7 @@ const port = 3000;
 app.listen(port, () => console.log("Servidor escuchado en puerto 3000"));
 
 //Importando funcion desde el modulo consultas.js
-const {agregar, todos, editar, eliminar, nuevaTransferencia, transferencias} = require("./consultas/consultas.js");
+const {agregar, todos, editar, eliminar, nuevaTransferencia, transferencias, obtenerSaldo} = require("./consultas/consultas.js");
 //Importando funcion de manejo de errores handleerrors.js
 const { handleErrors } = require("./consultas/handleErrors.js");
 //middleware para recibir desde el front como json
@@ -54,8 +54,22 @@ app.get("/usuarios", async (req, res) => {
     const usuarios = await todos();
     res.status(200).json(usuarios);
   } catch (error) {
-    console.error("Error al consultar los usuarios:", error);
-    res.status(500).json({ error: "Error genérico del servidor" });
+    // Verificar si el error tiene un código asociado y manejarlo
+    if (error.code) {
+      const { errorCode, status, message } = handleErrors(error.code); // Obtener el mensaje de error personalizado
+      console.error(
+        "Error al agregar el usuario.",
+        "Código de error: ",
+        errorCode,
+        "-",
+        message
+      ); // Mostrar código de error y mensaje de error
+      res.status(status).json({ error: message });
+    } else {
+      // Si el error no tiene un código, mostrar un mensaje genérico
+      console.error("Error al agregar el usuario:", error.message);
+      res.status(500).json({ error: "Error genérico del servidor" });
+    }
   }
 });
 
@@ -69,9 +83,23 @@ app.put("/usuario", async (req, res) => {
       const usuario = await editar(id, nombre, balance);
       res.status(200).json(usuario);
     } catch (error) {
-      console.error("Error al editar el usuario:", error);
-      res.status(500).json({ error: "Error genérico del servidor" });
-    }
+        // Verificar si el error tiene un código asociado y manejarlo
+        if (error.code) {
+          const { errorCode, status, message } = handleErrors(error.code); // Obtener el mensaje de error personalizado
+          console.error(
+            "Error al agregar el usuario.",
+            "Código de error: ",
+            errorCode,
+            "-",
+            message
+          ); // Mostrar código de error y mensaje de error
+          res.status(status).json({ error: message });
+        } else {
+          // Si el error no tiene un código, mostrar un mensaje genérico
+          console.error("Error al agregar el usuario:", error.message);
+          res.status(500).json({ error: "Error genérico del servidor" });
+        }
+      }
   }
 });
 
@@ -85,24 +113,60 @@ app.delete("/usuario", async (req, res) => {
       const usuario = await eliminar(id);
       res.status(200).json(usuario);
     } catch (error) {
-      console.error("Error al eliminar el usuario:", error);
-      res.status(500).json({ error: "Error genérico del servidor" });
-    }
+        // Verificar si el error tiene un código asociado y manejarlo
+        if (error.code) {
+          const { errorCode, status, message } = handleErrors(error.code); // Obtener el mensaje de error personalizado
+          console.error(
+            "Error al agregar el usuario.",
+            "Código de error: ",
+            errorCode,
+            "-",
+            message
+          ); // Mostrar código de error y mensaje de error
+          res.status(status).json({ error: message });
+        } else {
+          // Si el error no tiene un código, mostrar un mensaje genérico
+          console.error("Error al agregar el usuario:", error.message);
+          res.status(500).json({ error: "Error genérico del servidor" });
+        }
+      }
   }
 });
 
 //Ruta /transferencia post la cual recibe los datos para realizar una nueva transferencia
 app.post("/transferencia", async (req, res) => {
   const { emisor, receptor, monto } = req.body;
+  //Verifica si tenemos todos los campos
   if (!emisor || !receptor || !monto) {
     res.status(400).json({ mensaje: "Se deben agregar todos los datos" });
   }
   try {
+    
+    // Verificar si el emisor tiene suficiente saldo para realizar la transferencia
+    const saldoEmisor = await obtenerSaldo(emisor);
+    if (saldoEmisor < monto) {
+      return res.status(400).json({ mensaje: "El emisor no tiene suficiente saldo para realizar la transferencia" });
+    }
+    //Realiza la transferencia si el emisor tiene suficiente en su balance
     const resultado = await nuevaTransferencia(emisor, receptor, monto);
     res.status(200).json(resultado);
   } catch (error) {
-    console.error("Error al realizar la transferencia:", error.message);
-    res.status(500).json({ error: "Error al hacer la transferencia" });
+    // Verificar si el error tiene un código asociado y manejarlo
+    if (error.code) {
+      const { errorCode, status, message } = handleErrors(error.code); // Obtener el mensaje de error personalizado
+      console.error(
+        "Error al agregar el usuario.",
+        "Código de error: ",
+        errorCode,
+        "-",
+        message
+      ); // Mostrar código de error y mensaje de error
+      res.status(status).json({ error: message });
+    } else {
+      // Si el error no tiene un código, mostrar un mensaje genérico
+      console.error("Error al agregar el usuario:", error.message);
+      res.status(500).json({ error: "Error genérico del servidor" });
+    }
   }
 });
 
@@ -113,7 +177,21 @@ app.get("/transferencias", async (req, res) => {
       const resTransferencias = await transferencias(); 
       res.status(200).json(resTransferencias); 
     } catch (error) {
-      console.error("Error al consultar las transferencias:", error.message);
-      res.status(500).json({ error: "Error genérico del servidor" });
-    }
+        // Verificar si el error tiene un código asociado y manejarlo
+        if (error.code) {
+          const { errorCode, status, message } = handleErrors(error.code); // Obtener el mensaje de error personalizado
+          console.error(
+            "Error al agregar el usuario.",
+            "Código de error: ",
+            errorCode,
+            "-",
+            message
+          ); // Mostrar código de error y mensaje de error
+          res.status(status).json({ error: message });
+        } else {
+          // Si el error no tiene un código, mostrar un mensaje genérico
+          console.error("Error al agregar el usuario:", error.message);
+          res.status(500).json({ error: "Error genérico del servidor" });
+        }
+      }
   });
