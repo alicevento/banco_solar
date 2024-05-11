@@ -50,20 +50,33 @@ async function editar (id, nombre, balance) {
     }
 }
 
-//Funcion para eliminar el usuario
-async function eliminar (id) {
+//Funcion para eliminar el usuario y sus transferencias asociadas
+async function eliminar(id) {
     try {
-        const result = await pool.query("DELETE FROM usuarios WHERE id = $1 RETURNING *", [id]);
-        if (result.rows.length > 0) {
-            return { mensaje: `Se eliminó el registro con ID ${id}` }; // Devuelve un mensaje indicando que se eliminó el registro
-        } else {
-            return { mensaje: 'El registro no se encontró o no se pudo eliminar.' }; // Mensaje si no se encuentra el registro
+        // Iniciar una transacción SQL
+        await pool.query('BEGIN');
+
+        // Eliminar las transferencias asociadas al usuario de la tabla de transferencias
+        await pool.query("DELETE FROM transferencias WHERE emisor = $1 OR receptor = $1", [id]);
+
+        // Eliminar al usuario de la tabla de usuarios
+        const resultUsuario = await pool.query("DELETE FROM usuarios WHERE id = $1 RETURNING *", [id]);
+        if (resultUsuario.rows.length === 0) {
+            await pool.query('ROLLBACK');
+            return { mensaje: 'El usuario no se encontró o no se pudo eliminar.' }; // Mensaje si no se encuentra el usuario
         }
+        // Confirmar la transacción SQL
+        await pool.query('COMMIT');
+
+        return { mensaje: `Se eliminó el usuario con ID ${id}` }; // Devuelve un mensaje indicando que se eliminó el usuario
     } catch (error) {
+        // rollback de la transacción SQL
+        await pool.query('ROLLBACK');
         console.error("Error al eliminar el usuario:", error);
         throw error;
     }
 }
+
 //Función para hacer una nueva transferencia
 async function nuevaTransferencia(emisor, receptor, monto) {
     try {

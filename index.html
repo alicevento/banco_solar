@@ -337,8 +337,14 @@
       });
       const data = await response.json();
       console.log(data); // Para verificar la respuesta del servidor
-      getUsuarios(); // Para actualizar la tabla de usuarios después de eliminar
-      alert(`Se eliminó correctamente al usuario: ${nombre}.`);
+       if (response.ok) {
+            alert(`Se eliminó correctamente al usuario: ${nombre}.`);
+            // Recargar la página
+            window.location.reload();
+        } else {
+            console.error('Error al eliminar el usuario:', data.error);
+            alert('Error al eliminar el usuario. Consulta la consola para más detalles.');
+        }
     } catch (error) {
       console.error("Error al eliminar el usuario: ", error);
       alert("Algo salió mal..." + error);
