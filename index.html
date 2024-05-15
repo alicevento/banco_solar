@@ -336,16 +336,24 @@
         method: "DELETE",
       });
       const data = await response.json();
-      console.log(data); // Para verificar la respuesta del servidor
-       if (response.ok) {
-            alert(`Se eliminó correctamente al usuario: ${nombre}.`);
-            // Recargar la página
-            window.location.reload();
+      if (response.ok) {
+        // Verificar si se eliminó correctamente o si hubo un error
+        if (data.mensaje.startsWith("No se puede eliminar")) {
+          // Si no se puede eliminar debido a transferencias asociadas, mostrar mensaje de alerta
+          alert(data.mensaje);
         } else {
-            console.error('Error al eliminar el usuario:', data.error);
-            alert('Error al eliminar el usuario. Consulta la consola para más detalles.');
+          // Si se eliminó correctamente, mostrar mensaje de éxito
+          alert(`Se eliminó correctamente al usuario: ${nombre}.`);
+          // Recargar la página
+          window.location.reload();
         }
+      } else {
+        // Si hubo un error en la solicitud, mostrar el mensaje de error
+        console.error('Error al eliminar el usuario:', data.error);
+        alert('Error al eliminar el usuario. Consulta la consola para más detalles.');
+      }
     } catch (error) {
+      // Si hubo un error en la solicitud, mostrar mensaje de error
       console.error("Error al eliminar el usuario: ", error);
       alert("Algo salió mal..." + error);
     }
